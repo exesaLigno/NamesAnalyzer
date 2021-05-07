@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static RoslynTest.configuration;
 
 
 void CheckNode(SyntaxNode node)
@@ -21,7 +22,13 @@ void CheckNode(SyntaxNode node)
         foreach (SyntaxToken token in tokens)
         {
             if (token.Kind().ToString() == "IdentifierToken")
-                System.Console.WriteLine($"Name of variable is {token.Text}");
+            {
+                System.Console.WriteLine($"Name of function is {token.Text}");
+                if (token.Text.Length > Default.function_name_length)
+                {
+                    System.Console.WriteLine($"This name is too long! Recommended to use under {Default.function_name_length} symbols");
+                }
+            }
         }
     }
 
@@ -31,7 +38,7 @@ void CheckNode(SyntaxNode node)
         foreach (SyntaxToken token in tokens)
         {
             if (token.Kind().ToString() == "IdentifierToken")
-                System.Console.WriteLine($"Name of function is {token.Text}");
+                System.Console.WriteLine($"Name of variable is {token.Text}");
         }
     }
 
@@ -57,6 +64,7 @@ void GoAround(SyntaxNode node)
         GoAround(child);
     }
 }
+
 
 
 var test = MSBuildLocator.QueryVisualStudioInstances().ToArray();
