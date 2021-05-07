@@ -14,50 +14,80 @@ using System.Threading.Tasks;
 using static RoslynTest.configuration;
 
 
-void CheckNode(SyntaxNode node)
+String GetIdentifierName(SyntaxNode node)
 {
-    if (node.Kind().ToString() == "MethodDeclaration")
+    IEnumerable<SyntaxToken> tokens = node.ChildTokens();
+    foreach (SyntaxToken token in tokens)
     {
-        IEnumerable<SyntaxToken> tokens = node.ChildTokens();
-        foreach (SyntaxToken token in tokens)
+        if (token.Kind().ToString() == "IdentifierToken")
         {
-            if (token.Kind().ToString() == "IdentifierToken")
-            {
-                System.Console.WriteLine($"Name of function is {token.Text}");
-                if (token.Text.Length > Default.function_name_length)
-                {
-                    System.Console.WriteLine($"This name is too long! Recommended to use under {Default.function_name_length} symbols");
-                }
-            }
+            return token.Text;
         }
     }
 
-    else if (node.Kind().ToString() == "VariableDeclarator")
+    return null;
+}
+
+
+SyntaxNode GetVariableDeclarator(SyntaxNode node)
+{
+    if (node.Kind().ToString() == "VariableDeclarator")
     {
-        IEnumerable<SyntaxToken> tokens = node.ChildTokens();
-        foreach (SyntaxToken token in tokens)
-        {
-            if (token.Kind().ToString() == "IdentifierToken")
-                System.Console.WriteLine($"Name of variable is {token.Text}");
-        }
+        return node;
+    }
+
+    IEnumerable<SyntaxNode> childs = node.ChildNodes();
+    foreach (SyntaxNode child in childs)
+    {
+        SyntaxNode founded = GetVariableDeclarator(child);
+        if (founded != null)
+            return founded;
+    }
+
+    return null;
+}
+
+
+void CheckNode(SyntaxNode node)
+{
+    if (node.Kind().ToString() == "MethodDeclaration")      // Prototype for functions
+    {
+        String identifier_name = GetIdentifierName(node);
+        System.Console.WriteLine($"Function name is {identifier_name}");
+    }
+
+    else if (node.Kind().ToString() == "LocalDeclarationStatement")
+    {
+        SyntaxNode declarator = GetVariableDeclarator(node);
+        String identifier_name = GetIdentifierName(declarator);
+        System.Console.WriteLine($"Local variable name is {identifier_name}");
+    }
+
+    else if (node.Kind().ToString() == "FieldDeclaration")
+    {
+        SyntaxNode declarator = GetVariableDeclarator(node);
+        String identifier_name = GetIdentifierName(declarator);
+        System.Console.WriteLine($"Field name is {identifier_name}");
+    }
+
+    else if (node.Kind().ToString() == "PropertyDeclaration")
+    {
+        String identifier_name = GetIdentifierName(node);
+        System.Console.WriteLine($"Property name is {identifier_name}");
     }
 
     else if (node.Kind().ToString() == "ClassDeclaration")
     {
-        IEnumerable<SyntaxToken> tokens = node.ChildTokens();
-        foreach (SyntaxToken token in tokens)
-        {
-            if (token.Kind().ToString() == "IdentifierToken")
-                System.Console.WriteLine($"Name of class is {token.Text}");
-        }
+        String identifier_name = GetIdentifierName(node);
+        System.Console.WriteLine($"Class name is {identifier_name}");
     }
 }
 
 
 void GoAround(SyntaxNode node)
 {
-    System.Console.WriteLine($"Checking Node {node.Kind()}");
     CheckNode(node);
+    //System.Console.WriteLine($"Now checking {node.Kind()} node");
     IEnumerable<SyntaxNode> childs = node.ChildNodes();
     foreach (SyntaxNode child in childs)
     {
@@ -74,7 +104,7 @@ MSBuildLocator.RegisterInstance(inst);
 
 MSBuildWorkspace workspace = MSBuildWorkspace.Create();
 
-System.Console.WriteLine("Hello!");
+System.Console.WriteLine("Started loading of Solution!");
 Solution solution = workspace.OpenSolutionAsync(@"C:\Users\vskar\source\repos\Playground\Playground.sln").Result;
 Project project = solution.Projects.ToArray()[0];
 
