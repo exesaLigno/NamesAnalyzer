@@ -11,7 +11,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static RoslynTest.configuration;
 
 
 String GetIdentifierName(SyntaxNode node)
@@ -48,38 +47,58 @@ SyntaxNode GetVariableDeclarator(SyntaxNode node)
 }
 
 
+String GetName(SyntaxNode node)
+{
+    String name = null;
+
+    if (node is LocalDeclarationStatementSyntax || node is FieldDeclarationSyntax)
+        node = GetVariableDeclarator(node);
+
+    if (node is LocalDeclarationStatementSyntax || node is FieldDeclarationSyntax ||
+        node is MethodDeclarationSyntax || node is ClassDeclarationSyntax ||
+        node is PropertyDeclarationSyntax)
+        name = GetIdentifierName(node);
+
+    return name;
+}
+
+
+int GetMaximumLength(SyntaxNode node)
+{
+    int maximum_length = 0;
+
+    if (node is LocalDeclarationStatementSyntax)
+        maximum_length = RoslynTest.Properties.Settings.Default.variable_name_length;
+
+    else if (node is FieldDeclarationSyntax)
+        maximum_length = RoslynTest.Properties.Settings.Default.field_name_length;
+
+    else if (node is MethodDeclarationSyntax)
+        maximum_length = RoslynTest.Properties.Settings.Default.function_name_length;
+
+    else if (node is ClassDeclarationSyntax)
+        maximum_length = RoslynTest.Properties.Settings.Default.type_name_length;
+
+    else if (node is PropertyDeclarationSyntax)
+        maximum_length = RoslynTest.Properties.Settings.Default.property_name_length;
+
+    return maximum_length;
+}
+
+
 void CheckNode(SyntaxNode node)
 {
-    if (node.Kind().ToString() == "MethodDeclaration")      // Prototype for functions
-    {
-        String identifier_name = GetIdentifierName(node);
-        System.Console.WriteLine($"Function name is {identifier_name}");
-    }
+    String identifier_name = GetName(node);
+    int maximum_length = GetMaximumLength(node);
 
-    else if (node.Kind().ToString() == "LocalDeclarationStatement")
-    {
-        SyntaxNode declarator = GetVariableDeclarator(node);
-        String identifier_name = GetIdentifierName(declarator);
-        System.Console.WriteLine($"Local variable name is {identifier_name}");
-    }
+    Location location = node.GetLocation();
+    FileLinePositionSpan test = location.GetMappedLineSpan();
 
-    else if (node.Kind().ToString() == "FieldDeclaration")
-    {
-        SyntaxNode declarator = GetVariableDeclarator(node);
-        String identifier_name = GetIdentifierName(declarator);
-        System.Console.WriteLine($"Field name is {identifier_name}");
-    }
 
-    else if (node.Kind().ToString() == "PropertyDeclaration")
+    if (identifier_name != null)
     {
-        String identifier_name = GetIdentifierName(node);
-        System.Console.WriteLine($"Property name is {identifier_name}");
-    }
-
-    else if (node.Kind().ToString() == "ClassDeclaration")
-    {
-        String identifier_name = GetIdentifierName(node);
-        System.Console.WriteLine($"Class name is {identifier_name}");
+        if (identifier_name.Length > maximum_length)
+            System.Console.WriteLine($"\x1b[35mWarning [{test.StartLinePosition.Line + 1}]\x1b[0m: name '{identifier_name}' has too long name! Maximum {maximum_length} symbols");
     }
 }
 
