@@ -1,16 +1,11 @@
 ﻿using Microsoft.Build.Locator;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Symbols;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.MSBuild;
-using Microsoft.CodeAnalysis.Text;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RoslynTest
 {
@@ -192,6 +187,19 @@ namespace RoslynTest
                 AnalyzeProject(project);
 
             workspace.CloseSolution();
+        }
+
+
+        public void Analyze(String path)
+        {
+            if (path.EndsWith(".sln"))
+                AnalyzeSolution(path);
+
+            else if (path.EndsWith(".csproj"))
+                AnalyzeProject(path);
+
+            else
+                System.Console.WriteLine("\x1b[31merror\x1b[0m: This file is not a solution or a project!");
         }
     }
 }
