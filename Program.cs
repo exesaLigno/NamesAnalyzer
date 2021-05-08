@@ -86,8 +86,10 @@ int GetMaximumLength(SyntaxNode node)
 }
 
 
-void CheckNode(SyntaxNode node)
+bool CheckNode(SyntaxNode node)
 {
+    bool warning_generated = false;
+
     String identifier_name = GetName(node);
     int maximum_length = GetMaximumLength(node);
 
@@ -98,20 +100,28 @@ void CheckNode(SyntaxNode node)
     if (identifier_name != null)
     {
         if (identifier_name.Length > maximum_length)
-            System.Console.WriteLine($"\x1b[35mWarning [{test.StartLinePosition.Line + 1}]\x1b[0m: name '{identifier_name}' has too long name! Maximum {maximum_length} symbols");
+        {
+            System.Console.WriteLine($"\t\t\x1b[35mWarning [{test.StartLinePosition.Line + 1}]\x1b[0m: name '{identifier_name}' has too long name! Maximum {maximum_length} symbols");
+            warning_generated = true;
+        }
     }
+
+    return warning_generated;
 }
 
 
-void GoAround(SyntaxNode node)
+int GoAround(SyntaxNode node)
 {
-    CheckNode(node);
-    //System.Console.WriteLine($"Now checking {node.Kind()} node");
+    bool warning_generated = CheckNode(node);
+    int warnings_count = warning_generated ? 1 : 0;
+
     IEnumerable<SyntaxNode> childs = node.ChildNodes();
     foreach (SyntaxNode child in childs)
     {
-        GoAround(child);
+        warnings_count += GoAround(child);
     }
+
+    return warnings_count;
 }
 
 
@@ -124,18 +134,25 @@ MSBuildLocator.RegisterInstance(inst);
 MSBuildWorkspace workspace = MSBuildWorkspace.Create();
 
 System.Console.WriteLine("Started loading of Solution!");
-Solution solution = workspace.OpenSolutionAsync(@"C:\Users\vskar\source\repos\Playground\Playground.sln").Result;
-Project project = solution.Projects.ToArray()[0];
+Solution solution = workspace.OpenSolutionAsync(@"C:\Users\vskar\Downloads\roslyn-main\roslyn-main\Roslyn.sln").Result;
+System.Console.WriteLine("Solution opened!");
+IEnumerable<Project> projects = solution.Projects;
 
-System.Console.WriteLine($"Project {project.Name} is opened!");
-Compilation compilation = project.GetCompilationAsync().Result;
-Document[] documents = project.Documents.ToArray();
-
-foreach (Document document in documents)
+foreach (Project project in projects)
 {
-    SyntaxTree AST = document.GetSyntaxTreeAsync().Result;
-    SemanticModel model = compilation.GetSemanticModel(AST);
-    SyntaxNode root = AST.GetRoot();
-    GoAround(root);
+    System.Console.WriteLine($"\nAnalyzing project '{project.Name}'");
+    Document[] documents = project.Documents.ToArray();
+
+    foreach (Document document in documents)
+    {
+        System.Console.WriteLine($"\tAnalyzing document '{document.Name}'");
+        SyntaxTree AST = document.GetSyntaxTreeAsync().Result;
+        SyntaxNode root = AST.GetRoot();
+        int warnings_count = GoAround(AST.GetRoot());
+        if (warnings_count == 0)
+        {
+            System.Console.WriteLine("\t\t\x1b[32mNo warnings in this file!\x1b[0m");
+        }
+    }
 }
 
