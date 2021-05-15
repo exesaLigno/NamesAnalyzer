@@ -1,157 +1,38 @@
-﻿using Microsoft.Build.Locator;
+﻿using System;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.MSBuild;
-using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Build.Locator;
 
 namespace RoslynTest
 {
-    class Analyzer
+    class NamesAnalyzer : CSharpSyntaxWalker
     {
-        private MSBuildWorkspace workspace;
+        private MSBuildWorkspace workspace { get; }
 
-        public Analyzer()
+        public NamesAnalyzer()
         {
-            SetMSBuildInstance();
+            RegisterMSBuild();
             workspace = MSBuildWorkspace.Create();
         }
 
-
-        private String GetIdentifierName(SyntaxNode node)
+        private void RegisterMSBuild()
         {
-            IEnumerable<SyntaxToken> tokens = node.ChildTokens();
-            foreach (SyntaxToken token in tokens)
-            {
-                if (token.Kind().ToString() == "IdentifierToken")
-                {
-                    return token.Text;
-                }
-            }
-
-            return null;
-        }
-
-
-        private SyntaxNode GetVariableDeclarator(SyntaxNode node)
-        {
-            if (node.Kind().ToString() == "VariableDeclarator")
-            {
-                return node;
-            }
-
-            IEnumerable<SyntaxNode> childs = node.ChildNodes();
-            foreach (SyntaxNode child in childs)
-            {
-                SyntaxNode founded = GetVariableDeclarator(child);
-                if (founded != null)
-                    return founded;
-            }
-
-            return null;
-        }
-
-
-        private String GetName(SyntaxNode node)
-        {
-            String name = null;
-
-            if (node is LocalDeclarationStatementSyntax || node is FieldDeclarationSyntax)
-                node = GetVariableDeclarator(node);
-
-            if (node is LocalDeclarationStatementSyntax || node is FieldDeclarationSyntax ||
-                node is MethodDeclarationSyntax || node is ClassDeclarationSyntax ||
-                node is PropertyDeclarationSyntax)
-                name = GetIdentifierName(node);
-
-            return name;
-        }
-
-
-        private int GetMaximumLength(SyntaxNode node)
-        {
-            int maximum_length = 0;
-
-            if (node is LocalDeclarationStatementSyntax)
-                maximum_length = RoslynTest.Properties.Settings.Default.variable_name_length;
-
-            else if (node is FieldDeclarationSyntax)
-                maximum_length = RoslynTest.Properties.Settings.Default.field_name_length;
-
-            else if (node is MethodDeclarationSyntax)
-                maximum_length = RoslynTest.Properties.Settings.Default.function_name_length;
-
-            else if (node is ClassDeclarationSyntax)
-                maximum_length = RoslynTest.Properties.Settings.Default.type_name_length;
-
-            else if (node is PropertyDeclarationSyntax)
-                maximum_length = RoslynTest.Properties.Settings.Default.property_name_length;
-
-            return maximum_length;
-        }
-
-
-        private bool CheckNode(SyntaxNode node)
-        {
-            bool warning_generated = false;
-
-            String identifier_name = GetName(node);
-            int maximum_length = GetMaximumLength(node);
-
-            Location location = node.GetLocation();
-            FileLinePositionSpan test = location.GetMappedLineSpan();
-
-
-            if (identifier_name != null)
-            {
-                if (identifier_name.Length > maximum_length)
-                {
-                    System.Console.WriteLine($"\t\t\x1b[35mWarning [{test.StartLinePosition.Line + 1}]\x1b[0m: name '{identifier_name}' has too long name! Maximum {maximum_length} symbols");
-                    warning_generated = true;
-                }
-            }
-
-            return warning_generated;
-        }
-
-
-        private int GoAround(SyntaxNode node)
-        {
-            bool warning_generated = CheckNode(node);
-            int warnings_count = warning_generated ? 1 : 0;
-
-            IEnumerable<SyntaxNode> childs = node.ChildNodes();
-            foreach (SyntaxNode child in childs)
-            {
-                warnings_count += GoAround(child);
-            }
-
-            return warnings_count;
-        }
-
-
-        private void SetMSBuildInstance()
-        {
-            var instances = MSBuildLocator.QueryVisualStudioInstances().ToArray();
-            var instance = instances[0];
+            VisualStudioInstance[] instances = MSBuildLocator.QueryVisualStudioInstances().ToArray();
+            VisualStudioInstance instance = instances[0];
             MSBuildLocator.RegisterInstance(instance);
         }
-
 
         private void AnalyzeDocument(Document document)
         {
             System.Console.WriteLine($"\tAnalyzing document '{document.Name}'");
             SyntaxTree AST = document.GetSyntaxTreeAsync().Result;
             SyntaxNode root = AST.GetRoot();
-            int warnings_count = GoAround(AST.GetRoot());
-            if (warnings_count == 0)
-            {
-                System.Console.WriteLine("\t\t\x1b[32mNo warnings in this file!\x1b[0m");
-            }
+            Visit(AST.GetRoot());
         }
-
 
         private void AnalyzeProject(Project project)
         {
@@ -161,7 +42,6 @@ namespace RoslynTest
             foreach (Document document in documents)
                 AnalyzeDocument(document);
         }
-
 
         public void AnalyzeProject(String project_path)
         {
@@ -173,7 +53,6 @@ namespace RoslynTest
 
             workspace.CloseSolution();
         }
-
 
         public void AnalyzeSolution(String solution_path)
         {
@@ -189,7 +68,6 @@ namespace RoslynTest
             workspace.CloseSolution();
         }
 
-
         public void Analyze(String path)
         {
             if (path.EndsWith(".sln"))
@@ -200,6 +78,65 @@ namespace RoslynTest
 
             else
                 System.Console.WriteLine("\x1b[31merror\x1b[0m: This file is not a solution or a project!");
+        }
+
+        private int GetNodeLine(SyntaxNode node)
+        {
+            Location location = node.GetLocation();
+            FileLinePositionSpan line = location.GetMappedLineSpan();
+
+            return line.StartLinePosition.Line + 1;
+        }
+
+        public override void VisitVariableDeclarator(VariableDeclaratorSyntax node)
+        {
+            if (node.Parent.Parent is FieldDeclarationSyntax)
+            {
+                int maximum_length = RoslynTest.Properties.Settings.Default.field_name_length;
+
+                if (node.Identifier.Text.Length > maximum_length)
+                    Console.WriteLine($"\t\t\x1b[35mWarning [{GetNodeLine(node)}]\x1b[0m: name of field '{node.Identifier.Text}' is too long! Maximum {maximum_length} symbols");
+            }
+
+            else
+            {
+                int maximum_length = RoslynTest.Properties.Settings.Default.variable_name_length;
+
+                if (node.Identifier.Text.Length > maximum_length)
+                    Console.WriteLine($"\t\t\x1b[35mWarning [{GetNodeLine(node)}]\x1b[0m: name of local variable '{node.Identifier.Text}' is too long! Maximum {maximum_length} symbols");
+            }
+
+            base.VisitVariableDeclarator(node);
+        }
+
+        public override void VisitClassDeclaration(ClassDeclarationSyntax node)
+        {
+            int maximum_length = RoslynTest.Properties.Settings.Default.type_name_length;
+
+            if (node.Identifier.Text.Length > maximum_length)
+                Console.WriteLine($"\t\t\x1b[35mWarning [{GetNodeLine(node)}]\x1b[0m: name of type '{node.Identifier.Text}' is too long! Maximum {maximum_length} symbols");
+
+            base.VisitClassDeclaration(node);
+        }
+
+        public override void VisitPropertyDeclaration(PropertyDeclarationSyntax node)
+        {
+            int maximum_length = RoslynTest.Properties.Settings.Default.property_name_length;
+
+            if (node.Identifier.Text.Length > maximum_length)
+                Console.WriteLine($"\t\t\x1b[35mWarning [{GetNodeLine(node)}]\x1b[0m: name of property '{node.Identifier.Text}' is too long! Maximum {maximum_length} symbols");
+
+            base.VisitPropertyDeclaration(node);
+        }
+
+        public override void VisitMethodDeclaration(MethodDeclarationSyntax node)
+        {
+            int maximum_length = RoslynTest.Properties.Settings.Default.function_name_length;
+
+            if (node.Identifier.Text.Length > maximum_length)
+                Console.WriteLine($"\t\t\x1b[35mWarning [{GetNodeLine(node)}]\x1b[0m: name of function '{node.Identifier.Text}' is too long! Maximum {maximum_length} symbols");
+
+            base.VisitMethodDeclaration(node);
         }
     }
 }

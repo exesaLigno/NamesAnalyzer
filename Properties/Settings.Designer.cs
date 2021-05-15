@@ -25,7 +25,7 @@ namespace RoslynTest.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("8")]
+        [global::System.Configuration.DefaultSettingValueAttribute("6")]
         public int variable_name_length {
             get {
                 return ((int)(this["variable_name_length"]));
@@ -43,7 +43,7 @@ namespace RoslynTest.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("12")]
+        [global::System.Configuration.DefaultSettingValueAttribute("5")]
         public int function_name_length {
             get {
                 return ((int)(this["function_name_length"]));
@@ -52,7 +52,7 @@ namespace RoslynTest.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("7")]
+        [global::System.Configuration.DefaultSettingValueAttribute("8")]
         public int type_name_length {
             get {
                 return ((int)(this["type_name_length"]));
