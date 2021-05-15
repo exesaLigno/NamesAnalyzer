@@ -94,16 +94,16 @@ namespace RoslynTest
             {
                 int maximum_length = RoslynTest.Properties.Settings.Default.field_name_length;
 
-                if (node.Identifier.Text.Length > maximum_length)
-                    Console.WriteLine($"\t\t\x1b[35mWarning [{GetNodeLine(node)}]\x1b[0m: name of field '{node.Identifier.Text}' is too long! Maximum {maximum_length} symbols");
+                if (node.Identifier.ValueText.Length > maximum_length)
+                    Console.WriteLine($"\t\t\x1b[35mWarning [{GetNodeLine(node)}]\x1b[0m: name of field '{node.Identifier.ValueText}' is too long! Maximum {maximum_length} symbols");
             }
 
             else
             {
                 int maximum_length = RoslynTest.Properties.Settings.Default.variable_name_length;
 
-                if (node.Identifier.Text.Length > maximum_length)
-                    Console.WriteLine($"\t\t\x1b[35mWarning [{GetNodeLine(node)}]\x1b[0m: name of local variable '{node.Identifier.Text}' is too long! Maximum {maximum_length} symbols");
+                if (node.Identifier.ValueText.Length > maximum_length)
+                    Console.WriteLine($"\t\t\x1b[35mWarning [{GetNodeLine(node)}]\x1b[0m: name of local variable '{node.Identifier.ValueText}' is too long! Maximum {maximum_length} symbols");
             }
 
             base.VisitVariableDeclarator(node);
@@ -113,8 +113,8 @@ namespace RoslynTest
         {
             int maximum_length = RoslynTest.Properties.Settings.Default.type_name_length;
 
-            if (node.Identifier.Text.Length > maximum_length)
-                Console.WriteLine($"\t\t\x1b[35mWarning [{GetNodeLine(node)}]\x1b[0m: name of type '{node.Identifier.Text}' is too long! Maximum {maximum_length} symbols");
+            if (node.Identifier.ValueText.Length > maximum_length)
+                Console.WriteLine($"\t\t\x1b[35mWarning [{GetNodeLine(node)}]\x1b[0m: name of type '{node.Identifier.ValueText}' is too long! Maximum {maximum_length} symbols");
 
             base.VisitClassDeclaration(node);
         }
@@ -123,8 +123,8 @@ namespace RoslynTest
         {
             int maximum_length = RoslynTest.Properties.Settings.Default.property_name_length;
 
-            if (node.Identifier.Text.Length > maximum_length)
-                Console.WriteLine($"\t\t\x1b[35mWarning [{GetNodeLine(node)}]\x1b[0m: name of property '{node.Identifier.Text}' is too long! Maximum {maximum_length} symbols");
+            if (node.Identifier.ValueText.Length > maximum_length)
+                Console.WriteLine($"\t\t\x1b[35mWarning [{GetNodeLine(node)}]\x1b[0m: name of property '{node.Identifier.ValueText}' is too long! Maximum {maximum_length} symbols");
 
             base.VisitPropertyDeclaration(node);
         }
@@ -133,8 +133,8 @@ namespace RoslynTest
         {
             int maximum_length = RoslynTest.Properties.Settings.Default.function_name_length;
 
-            if (node.Identifier.Text.Length > maximum_length)
-                Console.WriteLine($"\t\t\x1b[35mWarning [{GetNodeLine(node)}]\x1b[0m: name of function '{node.Identifier.Text}' is too long! Maximum {maximum_length} symbols");
+            if (node.Identifier.ValueText.Length > maximum_length)
+                Console.WriteLine($"\t\t\x1b[35mWarning [{GetNodeLine(node)}]\x1b[0m: name of function '{node.Identifier.ValueText}' is too long! Maximum {maximum_length} symbols");
 
             base.VisitMethodDeclaration(node);
         }

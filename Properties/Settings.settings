@@ -3,7 +3,7 @@
   <Profiles />
   <Settings>
     <Setting Name="variable_name_length" Type="System.Int32" Scope="Application">
-      <Value Profile="(Default)">6</Value>
+      <Value Profile="(Default)">3</Value>
     </Setting>
     <Setting Name="field_name_length" Type="System.Int32" Scope="Application">
       <Value Profile="(Default)">7</Value>

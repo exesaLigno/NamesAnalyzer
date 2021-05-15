@@ -25,7 +25,7 @@ namespace RoslynTest.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("6")]
+        [global::System.Configuration.DefaultSettingValueAttribute("3")]
         public int variable_name_length {
             get {
                 return ((int)(this["variable_name_length"]));
